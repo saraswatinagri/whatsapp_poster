@@ -1,0 +1,40 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Saraswati Nagri Instagram post template">
+  <title>Instagram post template</title>
+  <rect x="0" y="0" width="1080" height="1080" fill="#F6F1E7"/>
+  <!-- Gold hairline frame -->
+  <rect x="44" y="44" width="992" height="992" fill="none" stroke="#C9A227" stroke-width="2"/>
+  <rect x="56" y="56" width="968" height="968" fill="none" stroke="#C9A227" stroke-width="1"/>
+
+  <!-- EMBLEM top center -->
+  <g transform="translate(476,110) scale(1.95)">
+    <circle cx="32" cy="32" r="29" fill="#F6F1E7" stroke="#221F1A" stroke-width="5"/>
+    <g fill="#F0731F" transform="translate(13.5,18) scale(0.58)">
+      <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+      <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+      <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+      <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+      <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+    </g>
+  </g>
+
+  <!-- Overline -->
+  <text x="540" y="360" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="600" font-size="24" letter-spacing="8" fill="#F0731F">NMRDA SANCTIONED · NAGPUR</text>
+  <line x1="380" y1="386" x2="700" y2="386" stroke="#C9A227" stroke-width="1.5"/>
+
+  <!-- Headline placeholder -->
+  <text x="540" y="500" text-anchor="middle" font-family="Playfair Display, serif" font-weight="700" font-size="76" fill="#221F1A">{Your headline</text>
+  <text x="540" y="588" text-anchor="middle" font-family="Playfair Display, serif" font-weight="700" font-size="76" fill="#221F1A">goes </text>
+  <text x="748" y="588" font-family="Playfair Display, serif" font-weight="800" font-size="76" fill="#E4007E" text-anchor="start">here}</text>
+
+  <!-- Supporting line placeholder -->
+  <text x="540" y="662" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="500" font-size="26" fill="#5C564D">{One-line supporting message · e.g. 15 km from Zero Mile}</text>
+
+  <!-- Magenta pill CTA -->
+  <rect x="330" y="742" width="420" height="82" rx="41" fill="#E4007E"/>
+  <text x="540" y="795" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="700" font-size="28" fill="#F6F1E7">Get prices on WhatsApp</text>
+
+  <!-- Footer -->
+  <line x1="120" y1="928" x2="960" y2="928" stroke="#C9A227" stroke-width="1.5"/>
+  <text x="120" y="972" font-family="Poppins, sans-serif" font-weight="700" font-size="26" fill="#221F1A">+91 94 94 94 28 94</text>
+  <text x="960" y="972" text-anchor="end" font-family="Poppins, sans-serif" font-weight="600" font-size="24" letter-spacing="2" fill="#5C564D">saraswatinagri.com</text>
+</svg>

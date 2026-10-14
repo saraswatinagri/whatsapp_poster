@@ -1,0 +1,21 @@
+<svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Saraswati Nagri — reversed lockup for dark backgrounds">
+  <title>Saraswati Nagri reversed lockup</title>
+  <!-- Dark rounded panel -->
+  <rect x="0" y="0" width="640" height="200" rx="24" fill="#221F1A"/>
+  <!-- EMBLEM: cream ring, lotus orange -->
+  <g transform="translate(20,36) scale(2.0)">
+    <circle cx="32" cy="32" r="29" fill="#221F1A" stroke="#F6F1E7" stroke-width="4"/>
+    <g fill="#F0731F" transform="translate(13.5,18) scale(0.58)">
+      <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+      <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+      <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+      <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+      <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+    </g>
+  </g>
+  <!-- WORDMARK cream text, magenta primary line stays magenta for brand recall -->
+  <text x="196" y="92" font-family="Poppins, sans-serif" font-weight="800" font-size="52" fill="#F6F1E7">सरस्वती नगरी</text>
+  <text x="198" y="126" font-family="Poppins, sans-serif" font-weight="600" font-size="21" letter-spacing="6" fill="#F6F1E7">SARASWATI NAGRI</text>
+  <line x1="200" y1="143" x2="470" y2="143" stroke="#C9A227" stroke-width="1.5"/>
+  <text x="199" y="164" font-family="Poppins, sans-serif" font-weight="500" font-size="15" letter-spacing="2.5" fill="#C9A227">Premium Residential Plots</text>
+</svg>

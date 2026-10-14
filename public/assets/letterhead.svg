@@ -1,0 +1,53 @@
+<svg width="1240" height="1754" viewBox="0 0 1240 1754" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Saraswati Nagri A4 letterhead">
+  <title>Saraswati Nagri letterhead</title>
+  <rect x="0" y="0" width="1240" height="1754" fill="#FDFBF7"/>
+
+  <!-- Faint watermark lotus centered -->
+  <g transform="translate(430,690) scale(6.0)" opacity="0.06">
+    <g fill="#F0731F">
+      <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+      <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+      <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+      <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+      <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+    </g>
+  </g>
+
+  <!-- Header: logo top-left -->
+  <g transform="translate(80,72) scale(1.35)">
+    <circle cx="32" cy="32" r="29" fill="#F6F1E7" stroke="#221F1A" stroke-width="5"/>
+    <g fill="#F0731F" transform="translate(13.5,18) scale(0.58)">
+      <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+      <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+      <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+      <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+      <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+    </g>
+  </g>
+  <text x="210" y="110" font-family="Poppins, sans-serif" font-weight="800" font-size="42" fill="#E4007E">सरस्वती नगरी</text>
+  <text x="212" y="140" font-family="Poppins, sans-serif" font-weight="600" font-size="17" letter-spacing="6" fill="#221F1A">SARASWATI NAGRI</text>
+  <text x="1160" y="104" text-anchor="end" font-family="Poppins, sans-serif" font-weight="600" font-size="15" letter-spacing="3" fill="#F0731F">PREMIUM RESIDENTIAL PLOTS</text>
+  <text x="1160" y="130" text-anchor="end" font-family="Poppins, sans-serif" font-weight="500" font-size="15" letter-spacing="2" fill="#5C564D">NMRDA-Sanctioned · Nagpur · Since 2003</text>
+
+  <!-- Gold rule under header -->
+  <line x1="80" y1="182" x2="1160" y2="182" stroke="#C9A227" stroke-width="2.5"/>
+  <line x1="80" y1="188" x2="1160" y2="188" stroke="#C9A227" stroke-width="1"/>
+
+  <!-- Body area placeholder guide (invisible in use) -->
+  <text x="80" y="250" font-family="Poppins, sans-serif" font-weight="400" font-size="16" fill="#8A8378">{ Letter body begins here }</text>
+
+  <!-- Footer -->
+  <line x1="80" y1="1600" x2="1160" y2="1600" stroke="#C9A227" stroke-width="2.5"/>
+  <line x1="80" y1="1606" x2="1160" y2="1606" stroke="#C9A227" stroke-width="1"/>
+
+  <g font-family="Poppins, sans-serif">
+    <text x="80" y="1646" font-weight="700" font-size="18" fill="#221F1A">+91 94 94 94 28 94</text>
+    <text x="80" y="1672" font-weight="400" font-size="15" fill="#5C564D">+91 78 88 02 88 66 · +91 98 23 38 88 66 · WhatsApp wa.me/919494942894</text>
+    <text x="80" y="1698" font-weight="500" font-size="15" fill="#5C564D">saraswatinagri.com · info@saraswatinagri.com</text>
+
+    <text x="1160" y="1646" text-anchor="end" font-weight="400" font-size="15" fill="#5C564D">302, Sai Shraddha Appt., Behind White House Bungalow,</text>
+    <text x="1160" y="1668" text-anchor="end" font-weight="400" font-size="15" fill="#5C564D">Utkarsh Society, Dabha-Wadi Road, Nagpur 441501, Maharashtra</text>
+  </g>
+
+  <text x="620" y="1728" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="500" font-size="13.5" letter-spacing="1.5" fill="#8A8378">RERA (Saraswati Nagri 11): PP1190002502724 · Government (NMRDA) Sanctioned · Zero Brokerage · Up to 90% Bank Loan</text>
+</svg>

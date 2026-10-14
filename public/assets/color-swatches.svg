@@ -1,0 +1,79 @@
+<svg width="900" height="640" viewBox="0 0 900 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Saraswati Nagri colour swatches">
+  <title>Saraswati Nagri colour system</title>
+  <rect x="0" y="0" width="900" height="640" fill="#F6F1E7"/>
+  <text x="48" y="60" font-family="Playfair Display, serif" font-weight="700" font-size="34" fill="#221F1A">Colour System</text>
+  <text x="48" y="88" font-family="Poppins, sans-serif" font-weight="500" font-size="14" letter-spacing="3" fill="#5C564D">SARASWATI NAGRI · BRAND PALETTE</text>
+  <line x1="48" y1="104" x2="852" y2="104" stroke="#C9A227" stroke-width="1.5"/>
+
+  <!-- Row helper: swatch 172w. Columns at x=48, 268, 488, 708. Rows at y=130, 300, 470 -->
+  <!-- Row 1 -->
+  <g font-family="Poppins, sans-serif">
+    <rect x="48"  y="130" width="172" height="92" rx="8" fill="#E4007E"/>
+    <text x="48"  y="242" font-weight="700" font-size="15" fill="#221F1A">Magenta</text>
+    <text x="48"  y="260" font-weight="500" font-size="12" fill="#5C564D">#E4007E · rgb 228,0,126</text>
+    <text x="48"  y="276" font-weight="400" font-size="11" fill="#8A8378">Primary / CTA only</text>
+
+    <rect x="268" y="130" width="172" height="92" rx="8" fill="#F0731F"/>
+    <text x="268" y="242" font-weight="700" font-size="15" fill="#221F1A">Lotus Orange</text>
+    <text x="268" y="260" font-weight="500" font-size="12" fill="#5C564D">#F0731F · rgb 240,115,31</text>
+    <text x="268" y="276" font-weight="400" font-size="11" fill="#8A8378">Icons, overlines, accents</text>
+
+    <rect x="488" y="130" width="172" height="92" rx="8" fill="#C9A227"/>
+    <text x="488" y="242" font-weight="700" font-size="15" fill="#221F1A">Antique Gold</text>
+    <text x="488" y="260" font-weight="500" font-size="12" fill="#5C564D">#C9A227 · rgb 201,162,39</text>
+    <text x="488" y="276" font-weight="400" font-size="11" fill="#8A8378">Hairlines, dividers</text>
+
+    <rect x="708" y="130" width="144" height="92" rx="8" fill="#221F1A"/>
+    <text x="708" y="242" font-weight="700" font-size="15" fill="#221F1A">Charcoal Ink</text>
+    <text x="708" y="260" font-weight="500" font-size="12" fill="#5C564D">#221F1A · rgb 34,31,26</text>
+    <text x="708" y="276" font-weight="400" font-size="11" fill="#8A8378">Primary text</text>
+  </g>
+
+  <!-- Row 2 -->
+  <g font-family="Poppins, sans-serif">
+    <rect x="48"  y="300" width="172" height="92" rx="8" fill="#F6F1E7" stroke="#C9A227" stroke-width="1"/>
+    <text x="48"  y="412" font-weight="700" font-size="15" fill="#221F1A">Cream</text>
+    <text x="48"  y="430" font-weight="500" font-size="12" fill="#5C564D">#F6F1E7 · rgb 246,241,231</text>
+    <text x="48"  y="446" font-weight="400" font-size="11" fill="#8A8378">Main canvas / background</text>
+
+    <rect x="268" y="300" width="172" height="92" rx="8" fill="#6F8F67"/>
+    <text x="268" y="412" font-weight="700" font-size="15" fill="#221F1A">Sage Green</text>
+    <text x="268" y="430" font-weight="500" font-size="12" fill="#5C564D">#6F8F67 · rgb 111,143,103</text>
+    <text x="268" y="446" font-weight="400" font-size="11" fill="#8A8378">Availability / success</text>
+
+    <rect x="488" y="300" width="172" height="92" rx="8" fill="#1FAF5A"/>
+    <text x="488" y="412" font-weight="700" font-size="15" fill="#221F1A">WhatsApp Green</text>
+    <text x="488" y="430" font-weight="500" font-size="12" fill="#5C564D">#1FAF5A · rgb 31,175,90</text>
+    <text x="488" y="446" font-weight="400" font-size="11" fill="#8A8378">WhatsApp buttons only</text>
+
+    <rect x="708" y="300" width="144" height="92" rx="8" fill="#B80066"/>
+    <text x="708" y="412" font-weight="700" font-size="15" fill="#221F1A">Deep Magenta</text>
+    <text x="708" y="430" font-weight="500" font-size="12" fill="#5C564D">#B80066</text>
+    <text x="708" y="446" font-weight="400" font-size="11" fill="#8A8378">Magenta hover / depth</text>
+  </g>
+
+  <!-- Row 3: soft tints -->
+  <text x="48" y="486" font-family="Poppins, sans-serif" font-weight="600" font-size="13" letter-spacing="2" fill="#8A8378">SOFT TINTS &amp; SUPPORTS</text>
+  <g font-family="Poppins, sans-serif">
+    <rect x="48"  y="500" width="120" height="60" rx="6" fill="#FCE8F3"/>
+    <text x="48"  y="580" font-weight="600" font-size="11" fill="#5C564D">Magenta tint · #FCE8F3</text>
+
+    <rect x="196" y="500" width="120" height="60" rx="6" fill="#FDEFE2"/>
+    <text x="196" y="580" font-weight="600" font-size="11" fill="#5C564D">Lotus soft · #FDEFE2</text>
+
+    <rect x="344" y="500" width="120" height="60" rx="6" fill="#E9DDBB"/>
+    <text x="344" y="580" font-weight="600" font-size="11" fill="#5C564D">Gold soft · #E9DDBB</text>
+
+    <rect x="492" y="500" width="120" height="60" rx="6" fill="#EFE7D7"/>
+    <text x="492" y="580" font-weight="600" font-size="11" fill="#5C564D">Cream deep · #EFE7D7</text>
+
+    <rect x="640" y="500" width="120" height="60" rx="6" fill="#FDFBF7" stroke="#C9A227" stroke-width="1"/>
+    <text x="640" y="580" font-weight="600" font-size="11" fill="#5C564D">Paper · #FDFBF7</text>
+
+    <rect x="788" y="500" width="64" height="60" rx="6" fill="#557A4E"/>
+    <text x="788" y="580" font-weight="600" font-size="11" fill="#5C564D">Sage deep</text>
+  </g>
+
+  <line x1="48" y1="606" x2="852" y2="606" stroke="#C9A227" stroke-width="1"/>
+  <text x="48" y="628" font-family="Poppins, sans-serif" font-weight="400" font-size="11" fill="#8A8378">Magenta is the conversion colour — buttons and one highlight per section. Cream is the canvas. Gold is thin &amp; decorative.</text>
+</svg>

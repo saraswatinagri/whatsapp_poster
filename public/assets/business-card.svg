@@ -1,0 +1,67 @@
+<svg width="2160" height="600" viewBox="0 0 2160 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Saraswati Nagri business card front and back">
+  <title>Saraswati Nagri business card</title>
+  <rect x="0" y="0" width="2160" height="600" fill="#EFE7D7"/>
+
+  <!-- ============ FRONT (x 0..1050) ============ -->
+  <g>
+    <rect x="0" y="0" width="1050" height="600" fill="#F6F1E7"/>
+    <rect x="30" y="30" width="990" height="540" fill="none" stroke="#C9A227" stroke-width="2"/>
+    <!-- Emblem centered -->
+    <g transform="translate(420,120) scale(3.3)">
+      <circle cx="32" cy="32" r="29" fill="#F6F1E7" stroke="#221F1A" stroke-width="5"/>
+      <g fill="#F0731F" transform="translate(13.5,18) scale(0.58)">
+        <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+        <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+        <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+        <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+        <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+      </g>
+    </g>
+    <text x="525" y="410" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="800" font-size="56" fill="#E4007E">सरस्वती नगरी</text>
+    <text x="525" y="448" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="600" font-size="22" letter-spacing="8" fill="#221F1A">SARASWATI NAGRI</text>
+    <line x1="380" y1="470" x2="670" y2="470" stroke="#C9A227" stroke-width="1.5"/>
+    <text x="525" y="500" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="500" font-size="17" letter-spacing="3" fill="#5C564D">Premium Residential Plots</text>
+  </g>
+
+  <!-- gutter line -->
+  <line x1="1055" y1="20" x2="1055" y2="580" stroke="#C9A227" stroke-width="1" stroke-dasharray="6 6"/>
+
+  <!-- ============ BACK (x 1060..2110) ============ -->
+  <g transform="translate(1060,0)">
+    <rect x="0" y="0" width="1050" height="600" fill="#221F1A"/>
+    <rect x="30" y="30" width="990" height="540" fill="none" stroke="#C9A227" stroke-width="2"/>
+
+    <!-- small emblem top-left -->
+    <g transform="translate(60,60) scale(1.5)">
+      <circle cx="32" cy="32" r="29" fill="#221F1A" stroke="#F6F1E7" stroke-width="4"/>
+      <g fill="#F0731F" transform="translate(13.5,18) scale(0.58)">
+        <path d="M32 1.5c-4.9 6.9-7.4 13.4-7.4 19.4 0 7.4 3.2 12.5 7.4 14.6 4.2-2.1 7.4-7.2 7.4-14.6 0-6-2.5-12.5-7.4-19.4z"/>
+        <path d="M14.5 7.5c.9 8.4 3.3 14.8 6.9 19.2 2.9 3.6 6.4 5.9 9.7 6.5-4.6-4.3-7.1-9.8-8.4-14.9-1.2-5.1-4.5-8.7-8.2-10.8z"/>
+        <path d="M49.5 7.5c-.9 8.4-3.3 14.8-6.9 19.2-2.9 3.6-6.4 5.9-9.7 6.5 4.6-4.3 7.1-9.8 8.4-14.9 1.2-5.1 4.5-8.7 8.2-10.8z"/>
+        <path d="M1.5 19.5c3.3 6.7 7.9 11.4 13 14 3.9 2 8.1 2.6 11.6 1.8-5.9-2.4-10.2-6.3-13.2-10.4-2.8-3.8-6.9-5.4-11.4-5.4z"/>
+        <path d="M62.5 19.5c-3.3 6.7-7.9 11.4-13 14-3.9 2-8.1 2.6-11.6 1.8 5.9-2.4 10.2-6.3 13.2-10.4 2.8-3.8 6.9-5.4 11.4-5.4z"/>
+      </g>
+    </g>
+    <text x="205" y="98" font-family="Poppins, sans-serif" font-weight="800" font-size="34" fill="#F6F1E7">सरस्वती नगरी</text>
+    <text x="207" y="128" font-family="Poppins, sans-serif" font-weight="600" font-size="14" letter-spacing="5" fill="#C9A227">SARASWATI NAGRI · SINCE 2003</text>
+
+    <line x1="60" y1="170" x2="990" y2="170" stroke="#C9A227" stroke-width="1"/>
+
+    <!-- Name / role -->
+    <text x="60" y="228" font-family="Playfair Display, serif" font-weight="700" font-size="42" fill="#F6F1E7">{Name}</text>
+    <text x="60" y="262" font-family="Poppins, sans-serif" font-weight="500" font-size="20" letter-spacing="3" fill="#F0731F">{Designation}</text>
+
+    <!-- Contact block -->
+    <g font-family="Poppins, sans-serif" fill="#F6F1E7">
+      <text x="60"  y="330" font-weight="700" font-size="24">+91 94 94 94 28 94</text>
+      <text x="60"  y="364" font-weight="400" font-size="18" fill="#E9DDBB">+91 78 88 02 88 66 · +91 98 23 38 88 66</text>
+      <text x="60"  y="404" font-weight="600" font-size="19" fill="#1FAF5A">WhatsApp · wa.me/919494942894</text>
+      <text x="60"  y="438" font-weight="500" font-size="19">saraswatinagri.com · info@saraswatinagri.com</text>
+      <text x="60"  y="478" font-weight="400" font-size="16" fill="#E9DDBB">302, Sai Shraddha Appt., Behind White House Bungalow,</text>
+      <text x="60"  y="500" font-weight="400" font-size="16" fill="#E9DDBB">Utkarsh Society, Dabha-Wadi Road, Nagpur 441501, Maharashtra</text>
+    </g>
+
+    <line x1="60" y1="522" x2="990" y2="522" stroke="#C9A227" stroke-width="1"/>
+    <text x="60" y="548" font-family="Poppins, sans-serif" font-weight="500" font-size="14" letter-spacing="1.5" fill="#8A8378">RERA (Saraswati Nagri 11): PP1190002502724 · NMRDA Sanctioned · Zero Brokerage</text>
+  </g>
+</svg>
