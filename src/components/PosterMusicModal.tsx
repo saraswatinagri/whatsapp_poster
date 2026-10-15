@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { 
   X, Play, Pause, Download, Share2, Music, Volume2, 
-  VolumeX, Sparkles, CheckCircle2, Sliders, 
-  Upload, Search, Copy, Check, RotateCcw, Plus
+  VolumeX, Sparkles, Sliders, 
+  Upload, Search, Copy, Check, RotateCcw, Plus,
+  Radio, Loader2
 } from 'lucide-react';
 import { audioEngine } from '../lib/audioEngine';
 import { 
@@ -11,7 +12,17 @@ import {
   saveStoredCustomSong, 
   registerAudioBuffer 
 } from '../lib/songLibrary';
-import { generateStatusVideo, ExportProgress, drawMusicSticker, drawWaveformOverlay, drawSparkleParticles } from '../lib/videoGenerator';
+import { 
+  searchOnlineMusic, 
+  POPULAR_MUSIC_SEARCH_PRESETS 
+} from '../lib/musicSearch';
+import { 
+  generateStatusVideo, 
+  ExportProgress, 
+  drawMusicSticker, 
+  drawWaveformOverlay, 
+  drawSparkleParticles 
+} from '../lib/videoGenerator';
 import { drawContactPlate } from '../lib/contactPlate';
 import { drawFullPosterCanvas } from '../lib/posterLibrary';
 import type { SongTrack, StatusCustomization, AgentProfile, PosterTemplate } from '../types';
@@ -32,14 +43,25 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
   onChangeAgent,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [selectedSong, setSelectedSong] = useState<SongTrack>(poster?.song || PRESET_SONGS[0]);
-  const [customSongsList, setCustomSongsList] = useState<SongTrack[]>([]);
+  const [, startTransition] = useTransition();
+
+  // Song selection & list
+  const [selectedSong, setSelectedSong] = useState<SongTrack>(() => poster?.song || PRESET_SONGS[0]);
+  const [customSongsList, setCustomSongsList] = useState<SongTrack[]>(() => loadStoredCustomSongs());
+  const [onlineSearchResults, setOnlineSearchResults] = useState<SongTrack[]>([]);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [activePresetFilter, setActivePresetFilter] = useState<string>('All');
+  const [searchSongQuery, setSearchSongQuery] = useState('');
+
+  // Custom song drawer / direct import
   const [showCustomDrawer, setShowCustomDrawer] = useState(false);
   const [customSongTitle, setCustomSongTitle] = useState('');
-  const [customSongArtist, setCustomSongArtist] = useState('Downloaded from Music App');
+  const [customSongArtist, setCustomSongArtist] = useState('');
   const [customSongUrl, setCustomSongUrl] = useState('');
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [customError, setCustomError] = useState<string | null>(null);
+
+  // Playback & preview state
   const [posterImg, setPosterImg] = useState<HTMLImageElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -47,15 +69,13 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
   const [activeSideTab, setActiveSideTab] = useState<'songs' | 'trimmer' | 'agent' | 'whatsapp'>('songs');
-  const [selectedGenre, setSelectedGenre] = useState<string>('All');
-  const [searchSongQuery, setSearchSongQuery] = useState('');
   const [copiedCaption, setCopiedCaption] = useState(false);
   const [shareSuccessMessage, setShareSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [customization, setCustomization] = useState<StatusCustomization>({
-    durationSec: 15,
-    startOffsetSec: 0,
+    durationSec: poster?.songDurationSec || 15,
+    startOffsetSec: poster?.songStartOffsetSec || 0,
     showMusicSticker: true,
     musicStickerPosition: 'top_right',
     motionEffect: 'ken_burns',
@@ -86,29 +106,67 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
     return () => { unsub(); };
   }, [selectedSong, customization.durationSec, customization.startOffsetSec, customization.musicVolume, isMuted]);
 
-  // Load stored custom songs on open & sync with poster song
+  // Update selected song when poster prop changes
   useEffect(() => {
-    if (isOpen) {
-      const stored = loadStoredCustomSongs();
-      setCustomSongsList(stored);
-      if (poster?.song) {
-        setSelectedSong(poster.song);
-      }
-      if (poster?.songStartOffsetSec !== undefined) {
-        setCustomization(prev => ({ ...prev, startOffsetSec: poster.songStartOffsetSec || 0 }));
-      }
-      if (poster?.songDurationSec) {
-        setCustomization(prev => ({ ...prev, durationSec: poster.songDurationSec || 15 }));
-      }
+    if (poster?.song) {
+      setSelectedSong(poster.song);
     }
-  }, [isOpen, poster]);
+    if (poster?.songStartOffsetSec !== undefined) {
+      setCustomization(prev => ({ ...prev, startOffsetSec: poster.songStartOffsetSec || 0 }));
+    }
+    if (poster?.songDurationSec) {
+      setCustomization(prev => ({ ...prev, durationSec: poster.songDurationSec || 15 }));
+    }
+  }, [poster]);
 
-  // Stop audio on unmount or close
+  // Stop audio when modal is closed
   useEffect(() => {
     if (!isOpen) {
       audioEngine.stop();
     }
   }, [isOpen]);
+
+  // Debounced online music search
+  useEffect(() => {
+    if (!searchSongQuery.trim() || searchSongQuery.trim().length < 2) {
+      setOnlineSearchResults([]);
+      setIsSearchingOnline(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingOnline(true);
+      try {
+        const results = await searchOnlineMusic(searchSongQuery.trim(), 12);
+        startTransition(() => {
+          setOnlineSearchResults(results);
+          setIsSearchingOnline(false);
+        });
+      } catch (err) {
+        console.error('Online search failed', err);
+        setIsSearchingOnline(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchSongQuery]);
+
+  // Quick preset filter handler
+  const handleSelectPreset = async (preset: { id: string; name: string; query: string }) => {
+    setActivePresetFilter(preset.id);
+    setSearchSongQuery(preset.query);
+    setIsSearchingOnline(true);
+    try {
+      const results = await searchOnlineMusic(preset.query, 12);
+      startTransition(() => {
+        setOnlineSearchResults(results);
+        setIsSearchingOnline(false);
+      });
+    } catch (err) {
+      console.error('Preset search failed', err);
+      setIsSearchingOnline(false);
+    }
+  };
 
   const handleCustomSongUpload = async (file: File) => {
     setCustomError(null);
@@ -118,14 +176,15 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       const customTrack: SongTrack = {
         id: `custom-${Date.now()}`,
         title: customSongTitle.trim() || cleanName,
-        artist: customSongArtist.trim() || 'Custom Uploaded Audio',
+        artist: customSongArtist.trim() || 'Uploaded Audio Track',
         genre: 'Custom',
         durationSec: Math.round(buffer.duration),
         bpm: 100,
         isCustom: true,
         audioBuffer: buffer,
         color: '#E11D48',
-        albumArt: '🎵',
+        albumArt: '📁',
+        sourceApp: 'device',
       };
 
       registerAudioBuffer(customTrack.id, buffer);
@@ -134,10 +193,11 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       setSelectedSong(customTrack);
       setShowCustomDrawer(false);
       setCustomSongTitle('');
+      setCustomSongArtist('');
       audioEngine.play(customTrack, 0, customization.musicVolume);
     } catch (err) {
       console.error('Failed to decode audio file', err);
-      setCustomError('Could not decode audio file. Please choose an MP3, WAV, M4A or AAC file.');
+      setCustomError('Could not decode audio file. Please select an MP3, WAV, M4A or AAC file.');
     }
   };
 
@@ -150,7 +210,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       const customTrack: SongTrack = {
         id: `custom-url-${Date.now()}`,
         title: customSongTitle.trim() || 'Imported Song Stream',
-        artist: customSongArtist.trim() || 'Online Music Stream',
+        artist: customSongArtist.trim() || 'Online Audio Link',
         genre: 'Custom',
         durationSec: Math.round(buffer.duration),
         bpm: 100,
@@ -159,6 +219,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
         audioBuffer: buffer,
         color: '#8B5CF6',
         albumArt: '🌐',
+        sourceApp: 'device',
       };
 
       registerAudioBuffer(customTrack.id, buffer);
@@ -168,6 +229,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       setShowCustomDrawer(false);
       setCustomSongUrl('');
       setCustomSongTitle('');
+      setCustomSongArtist('');
       audioEngine.play(customTrack, 0, customization.musicVolume);
     } catch (err) {
       console.error('Audio URL fetch failed', err);
@@ -198,7 +260,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
             ctx.translate(-W / 2, -H / 2);
           }
 
-          // Draw Poster Content
+          // Draw Poster Base
           drawFullPosterCanvas(ctx, W, H, poster, posterImg);
           ctx.restore();
 
@@ -243,7 +305,6 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
     setSelectedSong(song);
     audioEngine.play(song, customization.startOffsetSec, isMuted ? 0 : customization.musicVolume);
   };
-
 
   const formatCaption = () => {
     const isPartner = agent.role === 'Referral Partner';
@@ -290,7 +351,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       a.download = res.fileName;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      setShareSuccessMessage('Status Video Downloaded! Share to WhatsApp Status from your gallery.');
+      setShareSuccessMessage('Status Video Downloaded! Share to WhatsApp Status from your phone gallery.');
       setTimeout(() => setShareSuccessMessage(null), 5000);
     } catch (err) {
       console.error(err);
@@ -314,7 +375,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
     a.href = canvas.toDataURL('image/png');
     a.download = `saraswati_nagri_${poster.id}_branded.png`;
     a.click();
-    setShareSuccessMessage('Stamped Poster Downloaded! You can add music via WhatsApp sticker.');
+    setShareSuccessMessage('Stamped Poster Downloaded! You can add any song via WhatsApp Music Sticker.');
     setTimeout(() => setShareSuccessMessage(null), 5000);
   };
 
@@ -333,7 +394,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
       const caption = formatCaption();
 
-      // Native share attempt (Mobile Chrome/Safari/Edge)
+      // Native mobile share attempt
       if (typeof navigator !== 'undefined' && navigator.canShare) {
         const file = new File([res.blob], res.fileName, { type: res.mimeType });
         if (navigator.canShare({ files: [file] })) {
@@ -344,7 +405,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
         }
       }
 
-      // Desktop / Web Fallback: Download file & trigger wa.me
+      // Desktop / Web Fallback
       const url = URL.createObjectURL(res.blob);
       const a = document.createElement('a');
       a.href = url;
@@ -353,7 +414,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
       setTimeout(() => URL.revokeObjectURL(url), 60000);
 
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(caption)}`, '_blank');
-      setShareSuccessMessage('Video downloaded & WhatsApp opened! Attach video to your status message.');
+      setShareSuccessMessage('Video downloaded & WhatsApp opened! Attach video to your status.');
       setTimeout(() => setShareSuccessMessage(null), 6000);
     } catch (err) {
       if ((err as Error)?.name === 'AbortError') return;
@@ -366,15 +427,12 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
   if (!isOpen) return null;
 
-  const allSongs = [...customSongsList, ...PRESET_SONGS];
-  const genres = ['All', 'Devotional', 'Festive', 'Trending', 'Real Estate', 'Morning', 'Custom'];
-  
-  const filteredSongs = allSongs.filter((s) => {
-    const matchesSearch = s.title.toLowerCase().includes(searchSongQuery.toLowerCase()) ||
-                          s.artist.toLowerCase().includes(searchSongQuery.toLowerCase());
-    const matchesGenre = selectedGenre === 'All' || s.genre === selectedGenre;
-    return matchesSearch && matchesGenre;
-  });
+  // Active song list display logic
+  const displaySongs: SongTrack[] = [
+    ...onlineSearchResults,
+    ...customSongsList,
+    ...PRESET_SONGS,
+  ];
 
   const progressPercent = Math.min(100, ((currentTime % customization.durationSec) / customization.durationSec) * 100);
 
@@ -387,26 +445,26 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
         className="bg-white rounded-3xl max-w-6xl w-full max-h-[96vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Top Header */}
+        {/* Modal Top Header matching CRM styling */}
         <div className="px-5 py-3.5 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md font-black">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md font-black shrink-0">
               🪷
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-white tracking-tight">
+                <h2 className="text-sm font-bold text-white tracking-tight truncate max-w-xs sm:max-w-md">
                   {poster.title}
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                   {poster.projectName}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
                   WhatsApp Music Status
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300">
-                Generate branded 9:16 vertical status video with music sticker & agent contact plate
+              <p className="text-[11px] text-slate-300 leading-tight">
+                Attach songs from Spotify, Gaana or device audio &amp; create branded 9:16 WhatsApp status video
               </p>
             </div>
           </div>
@@ -414,42 +472,42 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyCaption}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer"
               title="Copy WhatsApp Status Caption"
             >
               {copiedCaption ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-              <span>{copiedCaption ? 'Caption Copied!' : 'Copy Caption'}</span>
+              <span>{copiedCaption ? 'Copied' : 'Copy Caption'}</span>
             </button>
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer"
             >
               <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Modal Body: Split Screen (Left: Phone Status Preview, Right: Audio Studio Controls) */}
+        {/* Modal Body: Split Screen (Left: Phone Preview, Right: Audio Controls) */}
         <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 bg-slate-50">
           
-          {/* LEFT COLUMN: Smartphone Mockup Live Status Player (col-span-5) */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-800 overflow-y-auto">
+          {/* LEFT: Smartphone Status Screen Preview (col-span-5) */}
+          <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-800 overflow-y-auto">
             
             {/* Phone Bezel */}
-            <div className="relative w-[280px] sm:w-[310px] aspect-[9/16] bg-black rounded-[42px] p-3 shadow-2xl border-[5px] border-slate-700/80 flex flex-col overflow-hidden">
+            <div className="relative w-[270px] sm:w-[295px] aspect-[9/16] bg-black rounded-[40px] p-2.5 shadow-2xl border-[4px] border-slate-700/80 flex flex-col overflow-hidden">
               
               {/* Speaker Notch */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-b-xl z-30 flex items-center justify-center">
-                <div className="w-10 h-1 bg-slate-700 rounded-full" />
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-3.5 bg-slate-900 rounded-b-xl z-30 flex items-center justify-center">
+                <div className="w-8 h-1 bg-slate-700 rounded-full" />
               </div>
 
               {/* Status Screen Inner */}
-              <div className="relative flex-1 rounded-[32px] overflow-hidden bg-slate-950 flex flex-col">
+              <div className="relative flex-1 rounded-[30px] overflow-hidden bg-slate-950 flex flex-col">
                 
-                {/* Top WhatsApp Status Bar */}
-                <div className="absolute top-0 inset-x-0 pt-3 px-3 z-20 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
-                  {/* Story Progress Bars */}
+                {/* Top Status Header Bar */}
+                <div className="absolute top-0 inset-x-0 pt-2.5 px-3 z-20 bg-gradient-to-b from-black/80 via-black/30 to-transparent">
+                  {/* Progress Line */}
                   <div className="w-full bg-white/30 h-1 rounded-full overflow-hidden mb-2">
                     <div 
                       className="bg-white h-full transition-all duration-100 ease-linear"
@@ -457,31 +515,29 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                     />
                   </div>
 
-                  {/* Status User Header */}
+                  {/* Status Author Details */}
                   <div className="flex items-center justify-between text-white">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-rose-600 text-[10px] font-black flex items-center justify-center ring-2 ring-white/50">
-                        RM
+                      <div className="w-6 h-6 rounded-full bg-rose-600 text-[9px] font-black flex items-center justify-center ring-1 ring-white/60">
+                        {agent.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[11px] font-bold leading-tight truncate">
+                        <div className="text-[10px] font-bold leading-tight truncate">
                           {agent.name}
                         </div>
-                        <div className="text-[9px] text-white/70 leading-tight">
-                          Today, 1:15 PM • {customization.durationSec}s status
+                        <div className="text-[8px] text-white/70 leading-none">
+                          Today • {customization.durationSec}s Status Story
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs text-white/80">
-                      <span className="text-[10px] font-mono bg-black/40 px-1.5 py-0.5 rounded">
-                        {Math.floor(currentTime % customization.durationSec)}s / {customization.durationSec}s
-                      </span>
-                    </div>
+                    <span className="text-[9px] font-mono bg-black/50 px-1.5 py-0.5 rounded text-white/90">
+                      {Math.floor(currentTime % customization.durationSec)}s / {customization.durationSec}s
+                    </span>
                   </div>
                 </div>
 
-                {/* Live Canvas Screen */}
+                {/* Canvas Canvas Preview */}
                 <div className="relative flex-1 w-full h-full flex items-center justify-center bg-black">
                   <canvas
                     ref={canvasRef}
@@ -490,309 +546,352 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                     className="w-full h-full object-cover"
                   />
 
-                  {/* Play Overlay Button if paused */}
+                  {/* Play Button Overlay */}
                   {!isPlaying && (
                     <button
                       onClick={handleTogglePlay}
-                      className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm border border-white/30 hover:scale-105 transition"
+                      className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-rose-600/95 text-white flex items-center justify-center shadow-xl backdrop-blur-sm border border-white/40 hover:scale-105 transition cursor-pointer"
                     >
-                      <Play size={24} className="ml-1" />
+                      <Play size={22} className="ml-0.5" />
                     </button>
                   )}
                 </div>
 
                 {/* Bottom WhatsApp Reply Bar */}
-                <div className="absolute bottom-0 inset-x-0 p-3 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20 flex items-center gap-2">
-                  <div className="flex-1 bg-white/20 backdrop-blur-md rounded-full px-3 py-1.5 text-[10px] text-white/80 border border-white/20">
+                <div className="absolute bottom-0 inset-x-0 p-2.5 pt-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20 flex items-center gap-2">
+                  <div className="flex-1 bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[9px] text-white/80 border border-white/20">
                     Reply to {agent.name}...
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-emerald-500/90 text-white flex items-center justify-center text-xs">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/90 text-white flex items-center justify-center text-[10px]">
                     💬
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Playback Controls beneath phone */}
-            <div className="mt-4 w-[280px] sm:w-[310px] flex items-center justify-between gap-2 px-2 text-white">
+            {/* Playback Controls Row */}
+            <div className="mt-3.5 w-[270px] sm:w-[295px] flex items-center justify-between gap-2 px-1 text-white">
               <button
                 onClick={handleTogglePlay}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition border border-slate-700"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition border border-slate-700 cursor-pointer"
               >
-                {isPlaying ? <Pause size={14} className="text-amber-400" /> : <Play size={14} className="text-emerald-400" />}
+                {isPlaying ? <Pause size={13} className="text-amber-400" /> : <Play size={13} className="text-emerald-400" />}
                 <span>{isPlaying ? 'Pause' : 'Play Status'}</span>
               </button>
 
               <button
                 onClick={handleReplay}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700"
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 cursor-pointer"
                 title="Restart playback"
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={13} />
               </button>
 
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700"
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 cursor-pointer"
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
-                {isMuted ? <VolumeX size={14} className="text-rose-400" /> : <Volume2 size={14} className="text-emerald-400" />}
+                {isMuted ? <VolumeX size={13} className="text-rose-400" /> : <Volume2 size={13} className="text-emerald-400" />}
               </button>
 
-              <div className="text-[11px] font-mono text-slate-400">
+              <div className="text-[10px] font-mono text-slate-400">
                 {Math.floor(currentTime % customization.durationSec)}s / {customization.durationSec}s
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Audio Studio Controls (col-span-7) */}
+          {/* RIGHT: Audio Studio & Customization Controls (col-span-7) */}
           <div className="lg:col-span-7 flex flex-col h-full overflow-hidden bg-white">
             
-            {/* Tab navigation headers */}
+            {/* Clean Tab Navigation Headers */}
             <div className="flex items-center border-b border-slate-200 px-5 pt-3 bg-slate-50 gap-2 overflow-x-auto">
               <button
                 onClick={() => setActiveSideTab('songs')}
-                className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap cursor-pointer ${
                   activeSideTab === 'songs'
                     ? 'border-rose-600 text-rose-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Music size={14} />
-                <span>Choose Song ({allSongs.length})</span>
+                <span>1. Select Music</span>
               </button>
 
               <button
                 onClick={() => setActiveSideTab('trimmer')}
-                className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap cursor-pointer ${
                   activeSideTab === 'trimmer'
                     ? 'border-rose-600 text-rose-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Sliders size={14} />
-                <span>Audio Trimmer & Duration</span>
+                <span>2. Trimmer &amp; Duration</span>
               </button>
 
               <button
                 onClick={() => setActiveSideTab('agent')}
-                className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap cursor-pointer ${
                   activeSideTab === 'agent'
                     ? 'border-rose-600 text-rose-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Sparkles size={14} />
-                <span>Sticker & Branding</span>
+                <span>3. Sticker &amp; Branding</span>
               </button>
 
               <button
                 onClick={() => setActiveSideTab('whatsapp')}
-                className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-bold transition border-b-2 whitespace-nowrap cursor-pointer ${
                   activeSideTab === 'whatsapp'
                     ? 'border-rose-600 text-rose-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Share2 size={14} />
-                <span>WhatsApp Tips</span>
+                <span>4. WhatsApp Methods</span>
               </button>
             </div>
 
-            {/* TAB CONTENT CONTAINER */}
-            <div className="flex-1 overflow-y-auto p-5">
+            {/* TAB CONTENT VIEWPORT */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
               
-              {/* TAB 1: SONGS SELECTOR & CUSTOM UPLOAD */}
+              {/* TAB 1: MUSIC CATALOG & SEARCH */}
               {activeSideTab === 'songs' && (
                 <div className="space-y-4">
                   
-                  {/* Upload Custom Song Section with File / URL choice */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50/70 via-amber-50/50 to-slate-50 border border-rose-200/80 shadow-xs space-y-3">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-600/20 shrink-0 font-bold">
-                          🎵
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-900 flex items-center gap-2">
-                            <span>Add Song Chosen from Other Music Apps</span>
-                            <span className="text-[9px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.2 rounded">Custom</span>
-                          </h4>
-                          <p className="text-[11px] text-slate-500">
-                            Import audio downloaded from Spotify, YouTube Music, Reels, Gaana or audio files
-                          </p>
-                        </div>
+                  {/* Real-Time Universal Music Search Bar */}
+                  <div className="relative">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchSongQuery}
+                      onChange={(e) => setSearchSongQuery(e.target.value)}
+                      placeholder="Search any song (e.g. Deva Shree Ganesha, Kesariya, Zingaat, Arijit Singh)..."
+                      className="w-full pl-10 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:bg-white transition font-medium"
+                    />
+                    {isSearchingOnline ? (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-rose-600 font-bold">
+                        <Loader2 size={12} className="animate-spin" />
+                        <span>Searching...</span>
                       </div>
-
+                    ) : searchSongQuery ? (
                       <button
-                        onClick={() => setShowCustomDrawer(!showCustomDrawer)}
-                        className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0 cursor-pointer flex items-center gap-1.5"
+                        onClick={() => {
+                          setSearchSongQuery('');
+                          setOnlineSearchResults([]);
+                          setActivePresetFilter('All');
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded-md cursor-pointer font-semibold"
                       >
-                        <Plus size={13} />
-                        <span>{showCustomDrawer ? 'Close Importer' : 'Import Custom Song'}</span>
+                        Clear
                       </button>
-                    </div>
-
-                    {customError && (
-                      <div className="p-2.5 bg-red-50 text-red-700 rounded-xl text-xs font-medium border border-red-200">
-                        {customError}
-                      </div>
-                    )}
-
-                    {showCustomDrawer && (
-                      <div className="pt-3 border-t border-rose-200/60 space-y-3 animate-in fade-in duration-200">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="p-3 bg-white hover:bg-rose-50/40 border border-rose-200 rounded-xl text-left cursor-pointer transition flex items-center gap-3"
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                              <Upload size={16} />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-800">Select Audio File</p>
-                              <p className="text-[10px] text-slate-400">MP3, WAV, M4A, AAC from phone/PC</p>
-                            </div>
-                          </button>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
-                            className="hidden"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                handleCustomSongUpload(e.target.files[0]);
-                              }
-                            }}
-                          />
-
-                          <div className="p-2.5 bg-white border border-rose-200 rounded-xl space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="url"
-                                value={customSongUrl}
-                                onChange={(e) => setCustomSongUrl(e.target.value)}
-                                placeholder="Paste Audio URL link..."
-                                className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-500"
-                              />
-                              <button
-                                onClick={handleImportAudioUrl}
-                                disabled={isImportingUrl || !customSongUrl.trim()}
-                                className="px-3 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shrink-0"
-                              >
-                                {isImportingUrl ? 'Loading...' : 'Load'}
-                              </button>
-                            </div>
-                            <p className="text-[9px] text-slate-400">
-                              Direct cloud MP3 link or stream
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 pt-1">
-                          <input
-                            type="text"
-                            value={customSongTitle}
-                            onChange={(e) => setCustomSongTitle(e.target.value)}
-                            placeholder="Custom Song Title (e.g. Kesariya, Deva Shree)"
-                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500"
-                          />
-                          <input
-                            type="text"
-                            value={customSongArtist}
-                            onChange={(e) => setCustomSongArtist(e.target.value)}
-                            placeholder="Artist / Music App (e.g. Spotify / Reels)"
-                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
 
-                  {/* Search & Genre filters */}
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        value={searchSongQuery}
-                        onChange={(e) => setSearchSongQuery(e.target.value)}
-                        placeholder="Search song title, artist, Marathi bansuri, Dhol Tasha..."
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:bg-white transition"
-                      />
+                  {/* Quick Vibe & Regional Preset Pills */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-slate-600 flex items-center gap-1">
+                        <Radio size={12} className="text-rose-500" />
+                        <span>Popular Regional &amp; Devotional Presets:</span>
+                      </span>
+                      {onlineSearchResults.length > 0 && (
+                        <span className="font-bold text-rose-600 text-[10px]">
+                          {onlineSearchResults.length} Results Found
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                      {genres.map((g) => (
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                      <button
+                        onClick={() => {
+                          setActivePresetFilter('All');
+                          setSearchSongQuery('');
+                          setOnlineSearchResults([]);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap cursor-pointer ${
+                          activePresetFilter === 'All' && !searchSongQuery
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        All Tracks
+                      </button>
+
+                      {POPULAR_MUSIC_SEARCH_PRESETS.map((preset) => (
                         <button
-                          key={g}
-                          onClick={() => setSelectedGenre(g)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap ${
-                            selectedGenre === g
+                          key={preset.id}
+                          onClick={() => handleSelectPreset(preset)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+                            activePresetFilter === preset.id
                               ? 'bg-rose-600 text-white shadow-xs'
                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                           }`}
                         >
-                          {g}
+                          <span>{preset.icon}</span>
+                          <span>{preset.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
+                  {/* Spotify, Gaana & Custom Audio Upload Bar */}
+                  <div className="p-3 bg-gradient-to-r from-rose-50/70 via-amber-50/40 to-slate-50 border border-rose-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        🎵
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                          Import from Spotify, Gaana, Reels or Device
+                        </h4>
+                        <p className="text-[10px] text-slate-500 leading-none mt-0.5">
+                          Upload downloaded MP3/M4A audio or direct streaming link
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-white hover:bg-rose-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Upload size={13} className="text-rose-600" />
+                        <span>Upload Audio</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowCustomDrawer(!showCustomDrawer)}
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Plus size={13} />
+                        <span>Link</span>
+                      </button>
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleCustomSongUpload(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Expandable Audio URL Link Form */}
+                  {showCustomDrawer && (
+                    <div className="p-3 bg-white border border-rose-200 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          value={customSongUrl}
+                          onChange={(e) => setCustomSongUrl(e.target.value)}
+                          placeholder="Paste direct audio URL (e.g. https://.../audio.mp3)..."
+                          className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500"
+                        />
+                        <button
+                          onClick={handleImportAudioUrl}
+                          disabled={isImportingUrl || !customSongUrl.trim()}
+                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shrink-0 cursor-pointer"
+                        >
+                          {isImportingUrl ? 'Loading...' : 'Load'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={customSongTitle}
+                          onChange={(e) => setCustomSongTitle(e.target.value)}
+                          placeholder="Song Title (e.g. Kesariya, Deva Shree)"
+                          className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500"
+                        />
+                        <input
+                          type="text"
+                          value={customSongArtist}
+                          onChange={(e) => setCustomSongArtist(e.target.value)}
+                          placeholder="Artist Name (e.g. Arijit Singh / Spotify)"
+                          className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500"
+                        />
+                      </div>
+
+                      {customError && (
+                        <p className="text-red-600 text-[11px] font-semibold">{customError}</p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Songs List */}
                   <div className="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
-                    {filteredSongs.map((song) => {
+                    {displaySongs.map((song) => {
                       const isSelected = selectedSong.id === song.id;
                       return (
                         <div
                           key={song.id}
                           onClick={() => handleSelectSong(song)}
-                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                          className={`p-2.5 sm:p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                             isSelected
                               ? 'bg-rose-50/70 border-rose-400 ring-1 ring-rose-400 shadow-xs'
                               : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            {/* Track Icon / Art */}
-                            <div 
-                              className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold shrink-0 shadow-xs"
-                              style={{ backgroundColor: song.color || '#E11D48' }}
-                            >
-                              {song.albumArt || '🎵'}
-                            </div>
+                            {/* Track Artwork */}
+                            {song.albumCoverUrl ? (
+                              <img
+                                src={song.albumCoverUrl}
+                                alt={song.title}
+                                className="w-10 h-10 rounded-xl object-cover shadow-xs shrink-0 border border-slate-200"
+                              />
+                            ) : (
+                              <div 
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold shrink-0 shadow-xs"
+                                style={{ backgroundColor: song.color || '#E11D48' }}
+                              >
+                                {song.albumArt || '🎵'}
+                              </div>
+                            )}
 
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
                                 <h4 className="text-xs font-bold text-slate-900 truncate">
                                   {song.title}
                                 </h4>
-                                {song.isCustom && (
-                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded">
+                                {song.genre === 'Online Search' ? (
+                                  <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded shrink-0">
+                                    Catalog
+                                  </span>
+                                ) : song.isCustom ? (
+                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded shrink-0">
                                     Custom
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded shrink-0">
+                                    Original
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-slate-500 truncate">
+                              <p className="text-[11px] text-slate-500 truncate leading-tight">
                                 {song.artist}
                               </p>
-                              <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
                                 <span className="font-semibold text-slate-600">{song.genre}</span>
                                 <span>•</span>
-                                <span>{song.durationSec}s</span>
-                                {song.bpm && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{song.bpm} BPM</span>
-                                  </>
-                                )}
+                                <span>{song.durationSec}s status clip</span>
                               </div>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
                             {isSelected && (
-                              <div className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center">
+                              <div className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
                                 <Check size={13} />
                               </div>
                             )}
@@ -802,7 +901,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                                 e.stopPropagation();
                                 handleSelectSong(song);
                               }}
-                              className={`p-2 rounded-xl text-xs font-semibold transition ${
+                              className={`p-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
                                 isSelected
                                   ? 'bg-rose-600 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -821,8 +920,8 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
               {/* TAB 2: AUDIO TRIMMER & DURATION */}
               {activeSideTab === 'trimmer' && (
-                <div className="space-y-6">
-                  {/* Duration Selection */}
+                <div className="space-y-5">
+                  {/* WhatsApp Status Duration Limit */}
                   <div>
                     <label className="text-xs font-bold text-slate-800 block mb-2">
                       WhatsApp Status Duration Limit
@@ -830,7 +929,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setCustomization({ ...customization, durationSec: 15 })}
-                        className={`p-3.5 rounded-2xl border text-left transition ${
+                        className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
                           customization.durationSec === 15
                             ? 'bg-rose-50 border-rose-500 ring-1 ring-rose-500 text-rose-900'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -841,13 +940,13 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                           <span className="text-[10px] bg-rose-100 text-rose-700 font-bold px-1.5 py-0.5 rounded">Standard</span>
                         </div>
                         <p className="text-[11px] text-slate-500">
-                          Lightweight quick status, fast uploads, crisp audio punch.
+                          Lightweight quick status, instant uploads, punchy chorus.
                         </p>
                       </button>
 
                       <button
                         onClick={() => setCustomization({ ...customization, durationSec: 30 })}
-                        className={`p-3.5 rounded-2xl border text-left transition ${
+                        className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
                           customization.durationSec === 30
                             ? 'bg-rose-50 border-rose-500 ring-1 ring-rose-500 text-rose-900'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -858,25 +957,25 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                           <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded">WhatsApp Max</span>
                         </div>
                         <p className="text-[11px] text-slate-500">
-                          Full WhatsApp status story duration with extended melodies.
+                          Full WhatsApp status story limit with extended melody.
                         </p>
                       </button>
                     </div>
                   </div>
 
-                  {/* Audio Start Offset (Trimmer) */}
+                  {/* Audio Start Position Scrubber */}
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                      <span>Music Start Position (Trimmer Offset)</span>
+                      <span>Song Hook / Chorus Scrubber</span>
                       <span className="text-rose-600 font-mono">
-                        {customization.startOffsetSec}s ({customization.startOffsetSec}s - {customization.startOffsetSec + customization.durationSec}s)
+                        {customization.startOffsetSec}s to {customization.startOffsetSec + customization.durationSec}s
                       </span>
                     </div>
 
                     <input
                       type="range"
                       min={0}
-                      max={Math.max(0, (selectedSong.durationSec || 45) - customization.durationSec)}
+                      max={Math.max(0, (selectedSong.durationSec || 30) - customization.durationSec)}
                       step={1}
                       value={customization.startOffsetSec}
                       onChange={(e) => {
@@ -888,9 +987,9 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                     />
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span>0:00 (Song Start)</span>
-                      <span>Best Chorus / Beat</span>
-                      <span>{(selectedSong.durationSec || 45) - customization.durationSec}s (End Range)</span>
+                      <span>0:00 (Intro)</span>
+                      <span>Best Chorus / Drop</span>
+                      <span>{(selectedSong.durationSec || 30) - customization.durationSec}s (Outro)</span>
                     </div>
                   </div>
 
@@ -922,8 +1021,8 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
               {/* TAB 3: STICKER & BRANDING */}
               {activeSideTab === 'agent' && (
-                <div className="space-y-6">
-                  {/* Sticker Position */}
+                <div className="space-y-5">
+                  {/* WhatsApp Music Sticker Position */}
                   <div>
                     <label className="text-xs font-bold text-slate-800 block mb-2">
                       WhatsApp Music Sticker Position
@@ -941,9 +1040,10 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                           onClick={() => setCustomization({ 
                             ...customization, 
                             showMusicSticker: true, 
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             musicStickerPosition: pos.id as any 
                           })}
-                          className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
+                          className={`p-2 rounded-xl border text-xs font-semibold transition cursor-pointer ${
                             customization.showMusicSticker && customization.musicStickerPosition === pos.id
                               ? 'bg-rose-50 border-rose-500 text-rose-700 font-bold'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -955,7 +1055,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
                       <button
                         onClick={() => setCustomization({ ...customization, showMusicSticker: !customization.showMusicSticker })}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
+                        className={`p-2 rounded-xl border text-xs font-semibold transition cursor-pointer ${
                           !customization.showMusicSticker
                             ? 'bg-amber-50 border-amber-500 text-amber-800 font-bold'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -966,10 +1066,10 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Motion Effect */}
+                  {/* Video Motion Effect */}
                   <div>
                     <label className="text-xs font-bold text-slate-800 block mb-2">
-                      Video Motion Visual Effect
+                      Visual Motion Effect
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
@@ -980,8 +1080,9 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                       ].map((eff) => (
                         <button
                           key={eff.id}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           onClick={() => setCustomization({ ...customization, motionEffect: eff.id as any })}
-                          className={`p-2.5 rounded-xl border text-xs text-left font-medium transition ${
+                          className={`p-2.5 rounded-xl border text-xs text-left font-medium transition cursor-pointer ${
                             customization.motionEffect === eff.id
                               ? 'bg-rose-50 border-rose-500 text-rose-700 font-bold'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -1001,7 +1102,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                       </span>
                       <button
                         onClick={() => setCustomization({ ...customization, personalizePlate: !customization.personalizePlate })}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md cursor-pointer ${
                           customization.personalizePlate ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
                         }`}
                       >
@@ -1034,33 +1135,33 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                 </div>
               )}
 
-              {/* TAB 4: WHATSAPP TIPS & WORKFLOW */}
+              {/* TAB 4: WHATSAPP WORKFLOW OPTIONS */}
               {activeSideTab === 'whatsapp' && (
                 <div className="space-y-4 text-xs text-slate-700">
-                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-                    <h4 className="font-bold text-emerald-900 mb-1 flex items-center gap-1.5">
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                    <h4 className="font-bold text-emerald-900 flex items-center gap-1.5">
                       <span>📲</span>
                       <span>Method 1: Direct Video WhatsApp Status (Automatic)</span>
                     </h4>
                     <p className="text-[11px] text-emerald-800 leading-relaxed">
-                      Tap <strong>"Export & Share on WhatsApp"</strong> below. The studio compiles the poster image + your chosen song into an HD 9:16 vertical video. When published as your status, the song plays automatically for everyone who views it!
+                      Click <strong>&quot;Export &amp; Share on WhatsApp&quot;</strong> below. The studio compiles the poster image + your chosen song into an HD 9:16 vertical video. When posted as your status story, the music plays automatically!
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
-                    <h4 className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                    <h4 className="font-bold text-amber-900 flex items-center gap-1.5">
                       <span>🎵</span>
                       <span>Method 2: Native WhatsApp Music Sticker (In-App)</span>
                     </h4>
-                    <p className="text-[11px] text-amber-800 leading-relaxed mb-2">
-                      If you prefer using WhatsApp's own internal music catalog from Instagram/Meta:
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      If you prefer using WhatsApp&apos;s own internal music catalog (which has Meta&apos;s complete licensed library):
                     </p>
-                    <ol className="list-decimal pl-4 space-y-1 text-[11px] text-amber-900">
-                      <li>Tap <strong>"Download Stamped Poster (PNG)"</strong> to save the branded high-res image.</li>
-                      <li>Open WhatsApp on phone ➡️ <strong>Status / Updates</strong> ➡️ Tap Camera icon.</li>
-                      <li>Select the saved poster from your photo gallery.</li>
-                      <li>Tap the <strong>Smiley / Sticker</strong> icon at top bar ➡️ Tap <strong>Music</strong>.</li>
-                      <li>Search any Bollywood or regional song from WhatsApp catalog and publish!</li>
+                    <ol className="list-decimal pl-4 space-y-1 text-[11px] text-amber-900 font-medium">
+                      <li>Click <strong>&quot;Poster Image (PNG)&quot;</strong> below to save your stamped high-res poster.</li>
+                      <li>Open <strong>WhatsApp</strong> ➡️ <strong>Status / Updates</strong> ➡️ Tap the Camera icon.</li>
+                      <li>Pick the saved poster from your photo gallery.</li>
+                      <li>Tap the <strong>Smiley / Sticker</strong> icon at top ➡️ Tap <strong>Music</strong>.</li>
+                      <li>Search any song and publish!</li>
                     </ol>
                   </div>
                 </div>
@@ -1070,7 +1171,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
             {/* BOTTOM EXPORT & ACTION FOOTER */}
             <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex flex-col gap-3">
               
-              {/* Export Progress Bar if encoding */}
+              {/* Export Encoding Progress Bar */}
               {isExporting && exportProgress && (
                 <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-800">
@@ -1082,7 +1183,7 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
                   </div>
                   <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                     <div 
-                      className="bg-gradient-to-r from-rose-500 to-amber-500 h-full transition-all duration-100 ease-out"
+                      className="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 h-full transition-all duration-100 ease-out"
                       style={{ width: `${exportProgress.progress}%` }}
                     />
                   </div>
@@ -1092,20 +1193,18 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
               {/* Success Notification Alert */}
               {shareSuccessMessage && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                  <Check size={16} className="text-emerald-600 shrink-0" />
                   <span>{shareSuccessMessage}</span>
                 </div>
               )}
 
               {/* Main Action Buttons Row */}
               <div className="flex flex-wrap items-center justify-between gap-2.5">
-                
-                {/* Secondary Download Options */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleDownloadVideo}
                     disabled={isExporting}
-                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
+                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer disabled:opacity-50"
                     title="Download 1080x1920 Status Video with Song"
                   >
                     <Download size={14} />
@@ -1114,19 +1213,18 @@ export const PosterMusicModal: React.FC<PosterMusicModalProps> = ({
 
                   <button
                     onClick={handleDownloadImage}
-                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
-                    title="Download branded poster image (for in-app WhatsApp music sticker)"
+                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer"
+                    title="Download branded poster image (for WhatsApp music sticker)"
                   >
                     <Download size={14} />
                     <span>Poster Image (PNG)</span>
                   </button>
                 </div>
 
-                {/* Primary WhatsApp Export & Share Action */}
                 <button
                   onClick={handleWhatsAppShare}
                   disabled={isExporting}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/25 transition cursor-pointer flex items-center gap-2"
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/25 transition cursor-pointer flex items-center gap-2 active:scale-95 disabled:opacity-50"
                 >
                   <Share2 size={15} />
                   <span>{isExporting ? 'Generating Video...' : 'Export & Share on WhatsApp'}</span>

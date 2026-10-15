@@ -38,7 +38,7 @@ export interface SongTrack {
   id: string;
   title: string;
   artist: string;
-  genre: 'Devotional' | 'Festive' | 'Real Estate' | 'Morning' | 'Trending' | 'Custom';
+  genre: 'Devotional' | 'Festive' | 'Real Estate' | 'Morning' | 'Trending' | 'Custom' | 'Online Search';
   durationSec: number;
   bpm: number;
   isCustom?: boolean;
@@ -47,6 +47,8 @@ export interface SongTrack {
   synthesizerType?: SynthesizerType;
   color: string;
   albumArt?: string;
+  albumCoverUrl?: string;
+  sourceApp?: 'spotify' | 'gaana' | 'itunes' | 'device' | 'preset';
 }
 
 export interface AgentProfile {

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Download, Share2, Search, Calendar, Filter, 
-  Sparkles, CheckCircle2, Music, Clock, Eye, 
-  Building2, Plus, ArrowRight, Video, FileText, ChevronDown,
-  Activity, CalendarClock, Layers, Trash2, Loader2, Play, Pause
+  Download, Share2, Search, 
+  Sparkles, CheckCircle2, Music, Clock, 
+  Plus, Play, Pause, Activity, Loader2
 } from 'lucide-react';
 import { PosterTemplate, AgentProfile } from '../types';
 import { DbProject } from '../lib/supabaseClient';
@@ -28,12 +27,10 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
   loading,
   onOpenMusicModal,
   onOpenUpload,
-  onDownloadOriginal,
   onDownloadBranded,
   onShareWhatsApp,
 }) => {
-  const [activeView, setActiveView] = useState<'today' | 'scheduled' | 'archive' | 'downloads'>('today');
-  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'image' | 'video' | 'message'>('all');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'song' | 'image' | 'video'>('all');
   const [selectedProject, setSelectedProject] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState('11h 15m');
@@ -71,9 +68,9 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
   const filteredPosters = posters.filter((p) => {
     const matchesProj = selectedProject === 'All' || p.projectName === selectedProject;
     const matchesType = activeTypeFilter === 'all' || 
+                        (activeTypeFilter === 'song' && p.hasSong) ||
                         (activeTypeFilter === 'image' && (p.type === 'image' || !p.type)) ||
-                        (activeTypeFilter === 'video' && p.type === 'video') ||
-                        (activeTypeFilter === 'message' && p.type === 'message');
+                        (activeTypeFilter === 'video' && p.type === 'video');
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (p.posterName && p.posterName.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -83,70 +80,51 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
-      {/* 1. Exact CRM Top Header: Views & Actions Row matching DailyBoard.tsx */}
+      {/* 1. Header & Actions Row matching Saraswati Nagri CRM */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
         
-        {/* Left: View Tabs Segmented Control (Today, Scheduled, Archive, Downloads) */}
+        {/* Left: Filter Pills */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
-          <button
-            onClick={() => setActiveView('today')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeView === 'today'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Today</span>
-            <span className="text-[10px] font-mono bg-violet-100 text-violet-700 px-1.5 py-0.2 rounded-full font-bold">
-              {filteredPosters.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('scheduled')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeView === 'scheduled'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Scheduled</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('archive')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeView === 'archive'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Archive</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('downloads')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeView === 'downloads'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Downloads</span>
-          </button>
+          {[
+            { id: 'all', label: 'All Posters', count: posters.length },
+            { id: 'song', label: '🎵 Music Status', count: posters.filter(p => p.hasSong).length },
+            { id: 'image', label: 'Images', count: posters.filter(p => !p.type || p.type === 'image').length },
+            { id: 'video', label: 'Videos', count: posters.filter(p => p.type === 'video').length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTypeFilter(tab.id as 'all' | 'song' | 'image' | 'video')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                activeTypeFilter === tab.id
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  activeTypeFilter === tab.id
+                    ? 'bg-rose-100 text-rose-700'
+                    : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Right: Countdown & Post Button matching CRM */}
+        {/* Right: Countdown & Post Button */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <Clock size={13} className="text-violet-600" />
+            <Clock size={13} className="text-rose-600" />
             <span className="font-bold text-slate-800">{timeLeft}</span>
-            <span className="text-slate-400">left for today&apos;s post</span>
+            <span className="text-slate-400">left for today&apos;s cycle</span>
           </div>
 
           <button
             onClick={onOpenUpload}
-            className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-violet-600/20 transition cursor-pointer"
+            className="px-3.5 py-1.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition cursor-pointer active:scale-95"
           >
             <Plus size={14} />
             <span>Post to Board</span>
@@ -154,63 +132,41 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Exact Filters Row matching DailyBoard.tsx */}
+      {/* 2. Project Selector & Search Row */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs">
         
-        {/* Media Type Filter Pills (All, Images, Videos, Messages) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          {[
-            { id: 'all', label: 'All' },
-            { id: 'image', label: 'Images' },
-            { id: 'video', label: 'Videos' },
-            { id: 'message', label: 'Messages' },
-          ].map((type) => (
-            <button
-              key={type.id}
-              onClick={() => setActiveTypeFilter(type.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                activeTypeFilter === type.id
-                  ? 'bg-violet-50 text-violet-700 border border-violet-200 shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {type.label}
-            </button>
-          ))}
+        {/* Project Selector */}
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Filter Project:</span>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none focus:border-rose-500 cursor-pointer"
+          >
+            <option value="All">All Projects ({projects.length})</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.name}>{p.name}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Project Selector & Search Filter */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold focus:outline-none focus:border-violet-500 cursor-pointer"
-            >
-              <option value="All">All Projects</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.name}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="relative flex-1 sm:w-60">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search posters or authors..."
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white"
-            />
-          </div>
+        {/* Search Filter */}
+        <div className="relative flex-1 sm:w-72">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search daily posters, title, author..."
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:bg-white transition"
+          />
         </div>
       </div>
 
       {/* 3. Loading State */}
       {loading && (
         <div className="py-24 flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-200 shadow-xs">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-600 mb-3" />
+          <Loader2 className="w-8 h-8 animate-spin text-rose-600 mb-3" />
           <p className="text-slate-800 font-black text-sm">Loading Live CRM Posters...</p>
           <p className="text-slate-400 font-semibold text-xs mt-1">Connecting to Supabase Database</p>
         </div>
@@ -219,8 +175,8 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
       {/* 4. Empty State */}
       {!loading && filteredPosters.length === 0 && (
         <div className="py-24 flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-slate-200 text-center p-6">
-          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 mb-3">
-            <CalendarClock size={24} />
+          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-3">
+            <Sparkles size={24} />
           </div>
           <h3 className="text-base font-black text-slate-800">No Posters Found</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm">
@@ -228,14 +184,14 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
           </p>
           <button
             onClick={onOpenUpload}
-            className="mt-4 px-4 py-2 bg-violet-600 text-white font-bold text-xs rounded-xl hover:bg-violet-700 transition"
+            className="mt-4 px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition cursor-pointer"
           >
             Upload New Poster
           </button>
         </div>
       )}
 
-      {/* 5. Live CRM Post Cards Grid (Matching DailyBoard.tsx Card Layout) */}
+      {/* 5. Live CRM Post Cards Grid */}
       {!loading && filteredPosters.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPosters.map((post) => {
@@ -272,19 +228,19 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                   {post.hasSong && post.song && (
                     <button
                       onClick={(e) => handleTogglePlayPostSong(post, e)}
-                      className="absolute top-3 right-3 bg-black/80 hover:bg-black text-white text-[9px] font-black px-2.5 py-1 rounded-full border border-purple-400/50 flex items-center gap-1.5 shadow-lg backdrop-blur-md z-10 cursor-pointer transition active:scale-95"
+                      className="absolute top-3 right-3 bg-black/80 hover:bg-black text-white text-[9px] font-black px-2.5 py-1 rounded-full border border-rose-400/50 flex items-center gap-1.5 shadow-lg backdrop-blur-md z-10 cursor-pointer transition active:scale-95"
                     >
                       {playingPostId === post.id ? (
                         <>
-                          <Pause size={10} className="text-purple-400" />
-                          <span className="text-purple-300">Playing</span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+                          <Pause size={10} className="text-rose-400" />
+                          <span className="text-rose-300">Playing</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
                         </>
                       ) : (
                         <>
-                          <Music size={10} className="text-purple-400" />
+                          <Music size={10} className="text-rose-400" />
                           <span className="truncate max-w-[90px]">{post.song.title}</span>
-                          <span className="text-purple-300 font-extrabold">({post.songDurationSec || 15}s)</span>
+                          <span className="text-rose-300 font-extrabold">({post.songDurationSec || 15}s)</span>
                         </>
                       )}
                     </button>
@@ -300,7 +256,7 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                     <div className="bg-white/95 backdrop-blur-sm text-slate-900 text-xs font-black px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all flex items-center gap-1.5 shadow-xl">
-                      <Music size={14} className="text-emerald-600" />
+                      <Music size={14} className="text-rose-600" />
                       <span>{post.hasSong ? 'Customize Song & Status' : 'Add Song & Create WhatsApp Status'}</span>
                     </div>
                   </div>
@@ -309,41 +265,41 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                 {/* Card Body matching CRM */}
                 <div className="p-4 flex flex-col gap-3 flex-1 justify-between bg-white">
                   <div>
-                    <h3 className="font-black text-slate-800 text-sm leading-snug group-hover:text-violet-600 transition-colors">
+                    <h3 className="font-black text-slate-800 text-sm leading-snug group-hover:text-rose-600 transition-colors">
                       {post.title}
                     </h3>
 
                     {/* Attached Song Mini Player if present */}
                     {post.hasSong && post.song && (
-                      <div className="mt-2 p-2 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center justify-between text-[11px]">
+                      <div className="mt-2 p-2 rounded-xl bg-rose-50/80 border border-rose-100 flex items-center justify-between text-[11px]">
                         <div className="flex items-center gap-2 min-w-0">
                           <button
                             onClick={(e) => handleTogglePlayPostSong(post, e)}
-                            className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-2xs transition active:scale-95"
+                            className="w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-2xs transition active:scale-95"
                           >
                             {playingPostId === post.id ? <Pause size={11} /> : <Play size={11} className="ml-0.5" />}
                           </button>
                           <div className="truncate">
                             <p className="font-bold text-slate-800 truncate leading-tight">{post.song.title}</p>
-                            <p className="text-[10px] text-purple-700 font-semibold leading-none mt-0.5">
+                            <p className="text-[10px] text-rose-700 font-semibold leading-none mt-0.5">
                               WhatsApp Status • {post.songDurationSec || 15}s Clip
                             </p>
                           </div>
                         </div>
                         {playingPostId === post.id && (
                           <div className="flex items-center gap-0.5 shrink-0 px-1">
-                            <span className="soundwave-bar w-0.5 h-3 bg-purple-600 rounded-full" />
-                            <span className="soundwave-bar w-0.5 h-4 bg-purple-600 rounded-full" />
-                            <span className="soundwave-bar w-0.5 h-2 bg-purple-600 rounded-full" />
+                            <span className="soundwave-bar w-0.5 h-3 bg-rose-600 rounded-full" />
+                            <span className="soundwave-bar w-0.5 h-4 bg-rose-600 rounded-full" />
+                            <span className="soundwave-bar w-0.5 h-2 bg-rose-600 rounded-full" />
                           </div>
                         )}
                       </div>
                     )}
 
-                    {/* Author & Time Details matching DailyBoard.tsx */}
+                    {/* Author & Time Details */}
                     <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white font-black text-[10px] flex items-center justify-center shadow-inner uppercase shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rose-500 to-amber-600 text-white font-black text-[10px] flex items-center justify-center shadow-inner uppercase shrink-0">
                           {authorInitials}
                         </div>
                         <div className="flex flex-col">
@@ -364,11 +320,11 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
 
                     <div className="mt-2 text-[10px] text-slate-500 font-medium flex items-center gap-1">
                       <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span>Personalized for: <strong>{agent.name}</strong></span>
+                      <span>Stamped for: <strong>{agent.name}</strong></span>
                     </div>
                   </div>
 
-                  {/* Exact Action Row with Newly Added "Music Status" Button */}
+                  {/* 3 Action Buttons Row: WhatsApp Share, My Poster, Music Status */}
                   <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100">
                     
                     {/* 1. Direct WhatsApp Share */}
@@ -380,7 +336,7 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                           onShareWhatsApp(post);
                         }
                       }}
-                      className="flex items-center justify-center gap-1 bg-green-500 hover:bg-green-600 hover:shadow-md hover:shadow-green-500/20 active:scale-95 text-white py-2 px-1 rounded-xl font-bold text-xs transition-all shadow-xs cursor-pointer"
+                      className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-2 px-1 rounded-xl font-bold text-xs transition-all shadow-xs cursor-pointer"
                       title={post.hasSong ? "Share to WhatsApp with Song Video" : "Share to WhatsApp"}
                     >
                       <Share2 size={13} />
@@ -397,14 +353,14 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                       <span>My Poster</span>
                     </button>
 
-                    {/* 3. NEW REQUESTED FEATURE: Music Status Studio */}
+                    {/* 3. Music Status Studio */}
                     <button
                       onClick={() => onOpenMusicModal(post)}
-                      className="flex items-center justify-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white py-2 px-1 rounded-xl font-bold text-xs transition-all shadow-sm shadow-purple-700/20 cursor-pointer"
+                      className="flex items-center justify-center gap-1 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-95 text-white py-2 px-1 rounded-xl font-bold text-xs transition-all shadow-sm shadow-rose-700/20 cursor-pointer"
                       title="Add/Customize song & create WhatsApp video status"
                     >
                       <Music size={13} />
-                      <span>Music Status</span>
+                      <span>Music</span>
                     </button>
                   </div>
 
@@ -432,7 +388,7 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
               </div>
               <button
                 onClick={() => setLightboxPoster(null)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -452,7 +408,7 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                   onDownloadBranded(lightboxPoster);
                   setLightboxPoster(null);
                 }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Download size={14} />
                 <span>Save Poster</span>
@@ -464,10 +420,10 @@ export const DailyBoardView: React.FC<DailyBoardViewProps> = ({
                   setLightboxPoster(null);
                   onOpenMusicModal(target);
                 }}
-                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-700/25"
+                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-700/25 cursor-pointer"
               >
                 <Music size={14} />
-                <span>Add Song & Create Status Video</span>
+                <span>Add Song &amp; Create Status Video</span>
               </button>
             </div>
           </div>

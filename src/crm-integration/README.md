@@ -1,6 +1,6 @@
 # Saraswati Nagri CRM • WhatsApp Status Poster with Song Integration Guide
 
-This guide explains how to add the **WhatsApp Status Poster with Song** feature directly into the **Saraswati Nagri CRM** codebase located at:
+This guide explains how to add the **WhatsApp Status Poster with Song & Music Search** feature directly into the **Saraswati Nagri CRM** codebase located at:
 `C:\Users\hp\OneDrive\Desktop\Saraswati_nagri`
 
 ---
@@ -13,18 +13,44 @@ This guide explains how to add the **WhatsApp Status Poster with Song** feature 
 
 ---
 
-## 2. Files to Copy into `Saraswati_nagri`
+## 2. Song Selection from External Music Apps (Spotify, Gaana, etc.)
+
+### Is it possible to directly download songs from Spotify or Gaana?
+1. **Technical & Legal Realities**:
+   - **Spotify & Gaana DRM**: Both platforms protect their entire catalog with Widevine DRM and strict music label licensing. Full song files cannot be extracted, downloaded, or recorded directly into external video files via public web APIs without violating developer terms and licensing.
+   - **Spotify Web API**: Provides metadata and search, but does not provide downloadable MP3/AAC audio files to mix into third-party video generators.
+   - **Gaana**: Has no public third-party developer API.
+
+2. **The Integrated Multi-Source Solution**:
+   - **Live Universal Music Search Engine**:
+     - Built-in live search powered by the Apple Music / iTunes indexing engine.
+     - Covers **millions of Bollywood, Marathi, Hindi, Devotional, Regional, and International songs** (Arijit Singh, Ajay-Atul, Shreya Ghoshal, Lata Mangeshkar, Marathi Powada, Dhol Tasha, etc.).
+     - Streams **authentic 30-second high-fidelity master previews** with zero API keys required and CORS enabled.
+     - Automatically decodes into Web Audio and compiles directly into the 15s/30s WhatsApp Status video.
+   - **Device Audio Upload (Spotify / Gaana / Reels Downloads)**:
+     - Agents who have downloaded or exported MP3/M4A/WAV tracks from Spotify, Gaana, YouTube Music, or Instagram Reels can upload them in 1 click.
+   - **Direct Audio Stream URL**:
+     - Paste any public audio stream or MP3 cloud link.
+   - **Curated Saraswati Nagri Presets**:
+     - Instant one-tap access to Saraswati Vandana, Ganesh Dhol Tasha, Royal Maratha, Shubh Muhurat, and Real Estate Chillwave.
+   - **Native WhatsApp Music Sticker Workflow**:
+     - WhatsApp has Meta's full licensed music library. Agents can click **"Poster Image (PNG)"** to download the stamped poster, open WhatsApp Status, and attach any song directly from WhatsApp's built-in Music sticker!
+
+---
+
+## 3. Files to Copy into `Saraswati_nagri`
 
 Copy the following files from this repository (`whatsapp_poster`) into `Saraswati_nagri`:
 
 1. `src/lib/audioEngine.ts` ➡️ `Saraswati_nagri/src/lib/poster/audio-engine.ts`
 2. `src/lib/videoGenerator.ts` ➡️ `Saraswati_nagri/src/lib/poster/video-generator.ts`
 3. `src/lib/songLibrary.ts` ➡️ `Saraswati_nagri/src/lib/poster/song-library.ts`
-4. `src/crm-integration/PosterMusicStatusModal.tsx` ➡️ `Saraswati_nagri/src/components/dashboard/PosterMusicStatusModal.tsx`
+4. `src/lib/musicSearch.ts` ➡️ `Saraswati_nagri/src/lib/poster/music-search.ts`
+5. `src/crm-integration/PosterMusicStatusModal.tsx` ➡️ `Saraswati_nagri/src/components/dashboard/PosterMusicStatusModal.tsx`
 
 ---
 
-## 3. Modifying `DailyBoard.tsx` in `Saraswati_nagri`
+## 4. Modifying `DailyBoard.tsx` in `Saraswati_nagri`
 
 In `Saraswati_nagri/src/components/dashboard/DailyBoard.tsx`:
 
@@ -44,7 +70,7 @@ Next to the existing WhatsApp share and download buttons:
 <button
   onClick={() => setMusicModalOpen(true)}
   title="Create WhatsApp Status with Song"
-  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 text-xs font-semibold transition"
+  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 text-xs font-semibold transition cursor-pointer"
 >
   <span>🎵</span>
   <span>Music Status</span>
@@ -69,10 +95,10 @@ Next to the existing WhatsApp share and download buttons:
 
 ---
 
-## 4. Alternative: Native WhatsApp In-App Song Sticker
+## 5. Alternative: Native WhatsApp In-App Song Sticker
 
 If an agent prefers using WhatsApp's internal music catalog on their phone:
-1. Tap **Download** in CRM to save the stamped high-res poster image.
+1. Tap **"Poster Image (PNG)"** in the studio to save the stamped high-res poster image.
 2. Open **WhatsApp** on mobile ➡️ Go to **Status / Updates** ➡️ Tap camera icon.
 3. Select the saved poster from gallery.
 4. Tap the **Smiley / Sticker Icon** at the top bar ➡️ Tap **Music**.

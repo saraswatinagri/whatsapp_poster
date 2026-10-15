@@ -83,8 +83,18 @@ class AudioEngine {
     this.currentTrack = track;
     this.setVolume(volume);
 
-    if (track.isCustom && track.audioBuffer) {
+    if (track.audioBuffer) {
       this.playBuffer(track.audioBuffer, offsetSec);
+    } else if (track.audioUrl) {
+      try {
+        const buf = await this.decodeUrl(track.audioUrl);
+        track.audioBuffer = buf;
+        if (this.currentTrack?.id === track.id) {
+          this.playBuffer(buf, offsetSec);
+        }
+      } catch (err) {
+        console.error('Failed to stream audio track from URL', err);
+      }
     } else if (track.synthesizerType) {
       this.playSynth(track.synthesizerType, offsetSec);
     }

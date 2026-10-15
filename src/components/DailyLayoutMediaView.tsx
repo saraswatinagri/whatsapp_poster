@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Camera, Image as ImageIcon, Download, Share2, Search, 
-  MapPin, Tag, Check, Sparkles, Building2, Calendar, Eye
+  MapPin, Tag, Check
 } from 'lucide-react';
 import { AgentProfile } from '../types';
 import { DbProject } from '../lib/supabaseClient';

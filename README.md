@@ -13,13 +13,14 @@ Removed all unrelated CRM sections to provide a streamlined, distraction-free Me
 - 📸 **Daily Layout Media**: Nagpur project site photography (sanctioned cement roads, grand entrance arches, boundary stones, demarcation, drone surveys).
 - 📁 **Project Legal Documents**: Instant access to NMRDA sanctioned RL maps, 7/12 land records, MahaRERA certificates, and Collector NA sanction orders.
 
-### 2. Custom Song Import from Other Music Applications
+### 2. Live Song Search & Custom Song Import
 Easily attach any song to your WhatsApp status:
-- **Audio Files from Device**: Import MP3, WAV, M4A, AAC, OGG, or FLAC files downloaded or exported from Spotify, YouTube Music, Apple Music, Instagram Reels, or WhatsApp Audio.
+- **Live Universal Music Search**: Search millions of songs across Bollywood, Marathi, Hindi, Devotional, and Trending charts (Ajay-Atul, Arijit Singh, Shreya Ghoshal, Lata Mangeshkar) with instant 30s master audio previews.
+- **Audio Files from Device (Spotify / Gaana Downloads)**: Import MP3, WAV, M4A, or AAC files downloaded or exported from Spotify, Gaana, YouTube Music, Instagram Reels, or WhatsApp Audio.
 - **Direct Audio URLs**: Paste public audio stream or MP3 URLs with real-time Web Audio API decoding.
-- **Curated Regional & Devotional Presets**: Quick access to Saraswati Vandana, Ganesh Mangalmurti Dhol Tasha, Shivrajyabhishek Powada, Deva Shree Ganesha, Mauli Mauli, Shubh Muhurat, and Modern Real Estate Chillwave.
-- **Audio Trimmer & Chorus Scrubber**: Drag to select the exact 15s or 30s hook/chorus of the song with live audio preview and volume controls.
-- **Persistent Storage**: Custom songs and decoded buffers are automatically cached and persisted across sessions.
+- **Curated Regional & Devotional Presets**: Quick 1-tap access to Saraswati Vandana, Ganesh Mangalmurti Dhol Tasha, Shivrajyabhishek Powada, Deva Shree Ganesha, Mauli Mauli, Shubh Muhurat, and Modern Real Estate Chillwave.
+- **Audio Trimmer & Chorus Scrubber**: Select 15s or 30s status duration limits and scrub to the exact hook or drop with live audio audition.
+- **Native WhatsApp Music Sticker Support**: 1-click stamped poster image export for agents using WhatsApp's in-app music sticker catalog.
 
 ### 3. Automated 1080x1920 HD WhatsApp Status Video Generator
 WhatsApp statuses require video format to carry sound. The client-side video generator compiles:

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  X, Calendar, Sparkles, Upload, Image as ImageIcon, 
-  Video, MessageSquare, Send, CalendarClock, Music, 
-  Play, Pause, Volume2, Share2, Check, Clock, AlertCircle,
-  Loader2, CheckCircle2, ChevronRight, Sliders, Link as LinkIcon,
-  Plus, FileAudio, RotateCcw
+  X, Sparkles, Upload, Image as ImageIcon, 
+  Video, MessageSquare, Send, Music, 
+  Play, Pause, Volume2, Share2, Clock, 
+  Loader2, Sliders, Search
 } from 'lucide-react';
 import { PosterTemplate, SongTrack, AgentProfile } from '../types';
 import { 
@@ -13,6 +12,7 @@ import {
   saveStoredCustomSong, 
   registerAudioBuffer 
 } from '../lib/songLibrary';
+import { searchOnlineMusic } from '../lib/musicSearch';
 import { audioEngine } from '../lib/audioEngine';
 import { generateStatusVideo, ExportProgress } from '../lib/videoGenerator';
 import { DbProject } from '../lib/supabaseClient';
@@ -46,7 +46,7 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
     const y = today.getFullYear();
     return `${d}-${m}-${y}`;
   });
-  const [personalizeForAgent, setPersonalizeForAgent] = useState(true);
+  const [personalizeForAgent] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
@@ -56,7 +56,10 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
   const [hasSong, setHasSong] = useState(true);
   const [songDurationSec, setSongDurationSec] = useState<15 | 30>(15);
   const [selectedSong, setSelectedSong] = useState<SongTrack>(PRESET_SONGS[0]);
-  const [customSongs, setCustomSongs] = useState<SongTrack[]>([]);
+  const [customSongs, setCustomSongs] = useState<SongTrack[]>(() => loadStoredCustomSongs());
+  const [onlineSongs, setOnlineSongs] = useState<SongTrack[]>([]);
+  const [isSearchingMusic, setIsSearchingMusic] = useState(false);
+  const [musicSearchQuery, setMusicSearchQuery] = useState('');
   const [songOffsetSec, setSongOffsetSec] = useState(0);
   const [songVolume, setSongVolume] = useState(0.85);
 
@@ -86,17 +89,6 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
   });
 
-  // Load custom songs from localStorage on open
-  useEffect(() => {
-    if (isOpen) {
-      const stored = loadStoredCustomSongs();
-      setCustomSongs(stored);
-      if (stored.length > 0 && selectedSong.id === PRESET_SONGS[0].id) {
-        // keep preset as default or let user pick
-      }
-    }
-  }, [isOpen]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTimeFormatted(
@@ -105,6 +97,27 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
     }, 10000);
     return () => clearInterval(timer);
   }, []);
+
+  // Online music search debounce
+  useEffect(() => {
+    if (!musicSearchQuery.trim() || musicSearchQuery.trim().length < 2) {
+      setOnlineSongs([]);
+      setIsSearchingMusic(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingMusic(true);
+      try {
+        const results = await searchOnlineMusic(musicSearchQuery.trim(), 8);
+        setOnlineSongs(results);
+      } catch (err) {
+        console.error('Online music search error', err);
+      } finally {
+        setIsSearchingMusic(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [musicSearchQuery]);
 
   // Audio engine subscriber
   useEffect(() => {
@@ -124,9 +137,6 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       audioEngine.stop();
-      setIsPlayingAudio(false);
-      setShowShareSuccessModal(false);
-      setIsExportingVideo(false);
     }
   }, [isOpen]);
 
@@ -352,7 +362,7 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
     }
   };
 
-  const allSongs = [...customSongs, ...PRESET_SONGS];
+  const allSongs = [...onlineSongs, ...customSongs, ...PRESET_SONGS];
 
   return (
     <div 
@@ -678,6 +688,24 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
                       </div>
                     )}
 
+                    {/* Online Music Search Bar */}
+                    <div className="relative mb-2">
+                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={musicSearchQuery}
+                        onChange={(e) => setMusicSearchQuery(e.target.value)}
+                        placeholder="Search song from catalog (Deva Shree Ganesha, Kesariya)..."
+                        className="w-full pl-8 pr-16 py-1.5 bg-white border border-rose-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 font-medium"
+                      />
+                      {isSearchingMusic && (
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-rose-600 font-bold">
+                          <Loader2 size={10} className="animate-spin" />
+                          <span>Searching</span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Active Song Selector Dropdown */}
                     <select
                       value={selectedSong.id}
@@ -687,6 +715,15 @@ export const CreatePosterModal: React.FC<CreatePosterModalProps> = ({
                       }}
                       className="w-full px-3 py-2 bg-white border border-rose-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-500 cursor-pointer shadow-2xs"
                     >
+                      {onlineSongs.length > 0 && (
+                        <optgroup label="🌐 Online Catalog Results">
+                          {onlineSongs.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              🎵 {s.title} • {s.artist} (30s)
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       {customSongs.length > 0 && (
                         <optgroup label="⭐ My Custom Songs (From Music Apps)">
                           {customSongs.map((s) => (
